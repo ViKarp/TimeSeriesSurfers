@@ -3,4 +3,7 @@ flake8
 isort
 pip
 python-dotenv
--e .
+
+pandas~=2.2.2
+scikit-learn~=1.5.1
+torch~=2.4.0
