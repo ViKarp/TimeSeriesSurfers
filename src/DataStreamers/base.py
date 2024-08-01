@@ -3,7 +3,7 @@ import pandas as pd
 
 
 class BaseDataStreamer(ABC):
-    def __init__(self, data_path: str, target: str, split_ratio: float = 0.2, chunk_size: int = 1):
+    def __init__(self, data_path: str, target: str, logger, split_ratio: float = 0.2, chunk_size: int = 1):
         """
         Class for separating data into past and future values
 
@@ -19,6 +19,7 @@ class BaseDataStreamer(ABC):
 
         # Load and sort data
         self.data = pd.read_csv(self.data_path, parse_dates=['timestamp'])
+        logger.log(f"Loaded data from {self.data_path}.")
         self.data = self.data[['timestamp', target]]
         self.data = self.data.sort_values('timestamp')
 
@@ -26,6 +27,7 @@ class BaseDataStreamer(ABC):
         split_index = int(len(self.data) * self.split_ratio)
         self._train_data = self.data.iloc[:split_index]
         self._online_data = self.data.iloc[split_index:]
+        logger.log("Init train and online data.")
 
     def get_train_data(self):
         """

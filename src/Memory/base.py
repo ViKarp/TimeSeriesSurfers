@@ -26,7 +26,9 @@ class BaseMemory(ABC):
 
         :param predicted_data: DataFrame containing the new predicted data.
         """
-        self.predicted_data = pd.concat([self.predicted_data, predicted_data]).sort_index()
+        # Check for duplicate indices and add only new data
+        combined_data = pd.concat([self.predicted_data, predicted_data])
+        self.predicted_data = combined_data[~combined_data.index.duplicated(keep='first')].sort_index()
 
     def get_correct_data_by_index(self, indices):
         """

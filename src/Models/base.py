@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 
 
 class BaseModel(ABC):
+    # TODO: logger model
     @abstractmethod
     def train(self, X_train, y_train):
         """

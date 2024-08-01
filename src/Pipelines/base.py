@@ -11,7 +11,7 @@ from src.Triggers.base import PerformanceTrigger
 
 class BasePipeline(ABC):
     def __init__(self, data_streamer, coach, logger, data_path, target,
-                 data_processor, memory, trigger, model, logging_file_path, split_ratio: float = 0.2,
+                 data_processor, memory, trigger, model, logging_file_path, results_path, split_ratio: float = 0.2,
                  chunk_size: int = 1):
         """
         Initializes the BasePipeline with DataStreamer, Coach, and Logger.
@@ -20,11 +20,14 @@ class BasePipeline(ABC):
         :param coach: An instance of a BaseCoach or similar class.
         :param logger: An instance of a Logger or similar class.
         """
-        self.data_streamer = data_streamer(data_path=data_path, target=target, split_ratio=split_ratio,
-                                           chunk_size=chunk_size)
-        self.coach = coach(data_processor=data_processor, memory=memory, trigger=trigger, model=model,
-                           train_data=self.data_streamer.get_train_data(), target=target)
+        # TODO: its need to do with cfg. Class Pipeline must have a instance only Coach and DataStreamer
+        # TODO: all_seed
         self.logger = logger(log_file=logging_file_path)
+        self.data_streamer = data_streamer(data_path=data_path, target=target, split_ratio=split_ratio,
+                                           chunk_size=chunk_size, logger=self.logger)
+        self.coach = coach(data_processor=data_processor, memory=memory, trigger=trigger, model=model,
+                           train_data=self.data_streamer.get_train_data(), target=target, logger=self.logger)
+        self.results_path = results_path
 
     @abstractmethod
     def run(self):
@@ -52,6 +55,8 @@ class ClassicPipeline(BasePipeline):
             # Get true data
             self.coach.get_new_data(chunk)
             self.logger.log("Get true data to coach.")
-        self.logger.log("Finished. Generate graphics")
-        self.coach.generate_graphics()
+        self.logger.log("Finished. Generate graphics and calculate metrics.")
+        self.coach.summing_up(dir_path=self.results_path)
+
+
 
