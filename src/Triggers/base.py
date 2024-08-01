@@ -19,9 +19,11 @@ class BaseTrigger(ABC):
 
 
 class PerformanceTrigger(BaseTrigger):
-    def __init__(self, metric=r2_score, threshold=0.1):
+    def __init__(self, metric=r2_score, threshold: float = 0.1):
         """
         Initializes the PerformanceTrigger with the given performance threshold.
+        This trigger compares recent performances and if a certain degradation occurs,
+        it tells you to retrain the model.
 
         :param metric: Metric to be used for calculating the performance.
         :param threshold: Performance threshold below which retraining is triggered.
@@ -53,7 +55,8 @@ class DriftTrigger(BaseTrigger):
     def __init__(self, drift_threshold):
         """
         Initializes the DriftTrigger with the given drift threshold.
-
+        This trigger compares the data and if there is a certain change in that data,
+        it tells you to retrain the model.
         :param drift_threshold: Threshold for detecting drift in data distribution.
         """
         self.drift_threshold = drift_threshold
@@ -83,9 +86,10 @@ class DriftTrigger(BaseTrigger):
 
 
 class MeanErrorTrigger(BaseTrigger):
-    def __init__(self, metric=mean_squared_error, error_threshold=50):
+    def __init__(self, metric=mean_squared_error, error_threshold: float = 50):
         """
         Initializes the MeanErrorTrigger with the given error threshold.
+        This trigger finds the average of all errors and, at a certain level, tells you to retrain the model.
 
         :param metric: Metric to be used for calculating the performance.
         :param error_threshold: Threshold for the prediction error that triggers retraining.
