@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 class BaseTrigger(ABC):
@@ -18,12 +19,14 @@ class BaseTrigger(ABC):
 
 
 class PerformanceTrigger(BaseTrigger):
-    def __init__(self, threshold):
+    def __init__(self, metric=r2_score, threshold=0.1):
         """
         Initializes the PerformanceTrigger with the given performance threshold.
 
+        :param metric: Metric to be used for calculating the performance.
         :param threshold: Performance threshold below which retraining is triggered.
         """
+        self.metric = metric
         self.threshold = threshold
         self.performance_history = []
 
@@ -36,11 +39,11 @@ class PerformanceTrigger(BaseTrigger):
         :param predicted_data: The predicted data used to evaluate the condition.
         :return: Boolean indicating whether retraining is needed.
         """
-        performance = model.evaluate(true_data, predicted_data)
+        performance = self.metric(true_data, predicted_data)
         self.performance_history.append(performance)
         if len(self.performance_history) > 1:
-            change = self.performance_history[-1] - self.performance_history[-2]
-            if change < self.threshold:
+            change = self.performance_history[-2] - self.performance_history[-1]
+            if change > self.threshold:
                 print("Retraining needed")
                 return True
         return False
@@ -77,3 +80,29 @@ class DriftTrigger(BaseTrigger):
         """
         # Here we would typically use statistical tests to detect drift
         pass
+
+
+class MeanErrorTrigger(BaseTrigger):
+    def __init__(self, metric=mean_squared_error, error_threshold=50):
+        """
+        Initializes the MeanErrorTrigger with the given error threshold.
+
+        :param metric: Metric to be used for calculating the performance.
+        :param error_threshold: Threshold for the prediction error that triggers retraining.
+        """
+        self.metric = metric
+        self.error_threshold = error_threshold
+        self.errors = []
+
+    def check(self, model, true_data, predicted_data):
+        """
+        Checks whether the average error exceeds the threshold, indicating the need for retraining.
+
+        :return: Boolean indicating whether retraining is needed.
+        """
+        if len(self.errors) == 0:
+            return False
+        error = self.metric(true_data, predicted_data)
+        self.errors.append(error)
+        average_error = sum(self.errors) / len(self.errors)
+        return average_error > self.error_threshold
