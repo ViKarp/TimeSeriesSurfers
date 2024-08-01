@@ -5,7 +5,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
-
 class NoScaler(TransformerMixin, BaseEstimator):
     def __init__(self):
         super(TransformerMixin, self).__init__()
