@@ -1,7 +1,8 @@
+from abc import ABC, abstractmethod
 import pandas as pd
 
 
-class BaseDataStreamer:
+class BaseDataStreamer(ABC):
     def __init__(self, data_path: str, target: str, split_ratio: float = 0.2, chunk_size: int = 1):
         """
         Class for separating data into past and future values
@@ -23,11 +24,8 @@ class BaseDataStreamer:
 
         # Split data into Train and Online parts
         split_index = int(len(self.data) * self.split_ratio)
-        self.train_data = self.data.iloc[:split_index]
-        self.online_data = self.data.iloc[split_index:]
-
-        # Initialize chunk index
-        self.chunk_index = 0
+        self._train_data = self.data.iloc[:split_index]
+        self._online_data = self.data.iloc[split_index:]
 
     def get_train_data(self):
         """
@@ -35,19 +33,13 @@ class BaseDataStreamer:
 
         :return: Train data as a pandas DataFrame.
         """
-        return self.train_data
+        return self._train_data
 
     def get_next_chunk(self):
         """
         Returns the next chunk of data from the Online part.
 
-        :return: Next chunk of data as a pandas DataFrame.
+        :return: Generator of next chunk of data as a pandas DataFrame.
         """
-        start = self.chunk_index * self.chunk_size
-        end = start + self.chunk_size
-        chunk = self.online_data.iloc[start:end]
-
-        # Update the chunk index
-        self.chunk_index += 1
-
-        return chunk
+        for start in range(0, (len(self._online_data)//self.chunk_size) * self.chunk_size, self.chunk_size):
+            yield self._online_data.iloc[start:start + self.chunk_size]

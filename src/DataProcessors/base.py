@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -19,7 +20,7 @@ class NoScaler(TransformerMixin, BaseEstimator):
         return X
 
 
-class BaseDataProcessor:
+class BaseDataProcessor(ABC):
     """
     A class for data processing (loading, preprocessing, splitting into training and test sets).
     """

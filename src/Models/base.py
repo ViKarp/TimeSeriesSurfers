@@ -6,6 +6,7 @@ import torch.optim as optim
 from sklearn.base import RegressorMixin
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
 from abc import ABC, abstractmethod
 
 
@@ -138,7 +139,6 @@ class TorchModel(BaseModel):
 
         eval_loss /= num_batches
 
-        print(f"Eval metrics:  Avg loss: {eval_loss:2f} \n")
         return eval_loss
 
     def train_step(self, dataloader, epoch):
@@ -171,13 +171,13 @@ class TorchModel(BaseModel):
 
 
 class SKLearnModel(BaseModel):
-    def __init__(self, model: RegressorMixin):
+    def __init__(self, model=LinearRegression):
         """
         Initializes the SKLearnModel with the given scikit-learn model.
 
         :param model: Scikit-learn model to be trained.
         """
-        self.model = model
+        self.model = model()
 
     def train(self, X_train, y_train):
         """
@@ -186,7 +186,7 @@ class SKLearnModel(BaseModel):
         :param X_train: Training features.
         :param y_train: Training labels.
         """
-        self.model.fit(X_train, y_train)
+        self.model.fit(X_train, y_train.values)
 
     def predict(self, X):
         """
@@ -207,4 +207,4 @@ class SKLearnModel(BaseModel):
         :return: Mean squared error on the test data.
         """
         predictions = self.predict(X_test)
-        return metric(y_test, predictions)
+        return metric(y_test.values, predictions)

@@ -1,7 +1,8 @@
+from abc import ABC, abstractmethod
 import pandas as pd
 
 
-class BaseMemory:
+class BaseMemory(ABC):
     def __init__(self, data: pd.DataFrame):
         """
         Initializes the BaseMemory with the given DataFrame.
