@@ -9,11 +9,10 @@ class BaseTrigger(ABC):
         self.logger = logger
 
     @abstractmethod
-    def check(self, model, true_data, predicted_data):
+    def check(self, true_data, predicted_data):
         """
         An abstract method to be implemented by subclasses to check if the model needs to be retrained.
 
-        :param model: The model to be checked.
         :param true_data: The true data used to evaluate the condition.
         :param predicted_data: The predicted data used to evaluate the condition.
         :return: Boolean indicating whether retraining is needed.
@@ -38,12 +37,13 @@ class PerformanceTrigger(BaseTrigger):
         :param metric: Metric to be used for calculating the performance.
         :param threshold: Performance threshold below which retraining is triggered.
         """
-        super(BaseTrigger, self).__init__(logger)
+        super(BaseTrigger, self).__init__()
+        self.logger = logger
         self.metric = metric
         self.threshold = threshold
         self.performance_history = []
 
-    def check(self, model, true_data, predicted_data):
+    def check(self, true_data, predicted_data):
         """
         Checks if the model's performance on the data is below the threshold.
 
@@ -79,11 +79,12 @@ class DriftTrigger(BaseTrigger):
         it tells you to retrain the model.
         :param drift_threshold: Threshold for detecting drift in data distribution.
         """
-        super(BaseTrigger, self).__init__(logger)
+        super(BaseTrigger, self).__init__()
+        self.logger = logger
         self.drift_list = []
         self.drift_threshold = drift_threshold
 
-    def check(self, model, true_data, predicted_data):
+    def check(self, true_data, predicted_data):
         """
         Checks if there is significant drift in the data compared to the data used for training.
 
@@ -125,12 +126,13 @@ class MeanErrorTrigger(BaseTrigger):
         :param metric: Metric to be used for calculating the performance.
         :param error_threshold: Threshold for the prediction error that triggers retraining.
         """
-        super(BaseTrigger, self).__init__(logger)
+        super(BaseTrigger, self).__init__()
+        self.logger = logger
         self.metric = metric
         self.error_threshold = error_threshold
         self.errors = []
 
-    def check(self, model, true_data, predicted_data):
+    def check(self, true_data, predicted_data):
         """
         Checks whether the average error exceeds the threshold, indicating the need for retraining.
 

@@ -7,3 +7,5 @@ python-dotenv
 pandas~=2.2.2
 scikit-learn~=1.5.1
 torch~=2.4.0
+matplotlib~=3.9.1
+numpy~=1.26.3

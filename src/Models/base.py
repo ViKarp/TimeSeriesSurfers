@@ -172,13 +172,13 @@ class TorchModel(BaseModel):
 
 
 class SKLearnModel(BaseModel):
-    def __init__(self, model=LinearRegression):
+    def __init__(self, model=LinearRegression()):
         """
         Initializes the SKLearnModel with the given scikit-learn model.
 
         :param model: Scikit-learn model to be trained.
         """
-        self.model = model()
+        self.model = model
 
     def train(self, X_train, y_train):
         """

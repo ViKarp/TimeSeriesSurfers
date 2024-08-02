@@ -10,7 +10,7 @@ class BaseMemory(ABC):
         :param data: DataFrame containing the initial data.
         """
         self.data = data.copy()
-        self.predicted_data = pd.DataFrame(index=data.index, columns=data.columns)
+        self.predicted_data = None
 
     def load_new_data(self, new_data: pd.DataFrame):
         """
@@ -27,8 +27,11 @@ class BaseMemory(ABC):
         :param predicted_data: DataFrame containing the new predicted data.
         """
         # Check for duplicate indices and add only new data
-        combined_data = pd.concat([self.predicted_data, predicted_data])
-        self.predicted_data = combined_data[~combined_data.index.duplicated(keep='first')].sort_index()
+        if predicted_data is None:
+            self.predicted_data = predicted_data
+        else:
+            combined_data = pd.concat([self.predicted_data, predicted_data])
+            self.predicted_data = combined_data[~combined_data.index.duplicated(keep='first')].sort_index()
 
     def get_correct_data_by_index(self, indices):
         """

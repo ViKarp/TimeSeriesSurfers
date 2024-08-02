@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 import pandas as pd
 
 
@@ -20,13 +20,14 @@ class BaseDataStreamer(ABC):
         # Load and sort data
         self.data = pd.read_csv(self.data_path, parse_dates=['timestamp'])
         logger.log(f"Loaded data from {self.data_path}.")
-        self.data = self.data[['timestamp', target]]
+        self.data = self.data[['timestamp', target[0]]]
         self.data = self.data.sort_values('timestamp')
 
         # Split data into Train and Online parts
         split_index = int(len(self.data) * self.split_ratio)
         self._train_data = self.data.iloc[:split_index]
         self._online_data = self.data.iloc[split_index:]
+        # It is pd.DataFrame with two columns: timestamp, target
         logger.log("Init train and online data.")
 
     def get_train_data(self):

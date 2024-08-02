@@ -1,6 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 import pandas as pd
-import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -40,7 +39,7 @@ class BaseDataProcessor(ABC):
         """
         Splits the given DataFrame into Train and Validation parts.
 
-        :param data: DataFrame containing the data to split.
+        :param data: DataFrame containing the data to split. cols: ['timestamp', target]
         :return: A tuple of Train and Validation DataFrames.
         """
         train_data, val_data = train_test_split(data, test_size=self.val_size, shuffle=False)
@@ -52,7 +51,7 @@ class BaseDataProcessor(ABC):
 
         :param train_data: DataFrame containing the Train data.
         :param val_data: DataFrame containing the Validation data.
-        :return: A tuple of preprocessed Train and Validation DataFrames.
+        :return: A tuple of preprocessed Train and Validation DataFrames with one column and index is timestamp.
         """
         train_data_scaled = train_data.copy()
         val_data_scaled = val_data.copy()
@@ -85,7 +84,7 @@ class BaseDataProcessor(ABC):
         if len(self.target) == 1:
             data_inverse_transformed = data_inverse_transformed[self.target[0]].values.reshape(-1, 1)
             data_inverse_transformed = self.scaler.inverse_transform(data_inverse_transformed)
-            data_inverse_transformed = pd.DataFrame(data_inverse_transformed.flatten(), index=data['timestamp'],
+            data_inverse_transformed = pd.DataFrame(data_inverse_transformed.flatten(), index=data.index,
                                                     columns=self.target)
         else:
             data_inverse_transformed.iloc[:, :] = self.scaler.inverse_transform(data_inverse_transformed)
@@ -101,5 +100,7 @@ class StandardScalerDataProcessor(BaseDataProcessor):
         :param target: List of the names of the target variable.
         :param val_size: Ratio to split the data into Train and Validation parts.
         """
-        super(BaseDataProcessor, self).__init__(target, val_size)
+        super(BaseDataProcessor, self).__init__()
+        self.target = target
+        self.val_size = val_size
         self.scaler = StandardScaler()
