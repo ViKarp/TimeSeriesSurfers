@@ -119,50 +119,92 @@ class BaseCoach(ABC):
         :param dir_path: Directory path to save the output files.
         :return: None
         """
-        os.makedirs(dir_path, exist_ok=True)
+        try:
+            # Ensure the directory exists
+            os.makedirs(dir_path, exist_ok=True)
 
-        # Plotting predicted vs real values
-        fig, ax = plt.subplots(figsize=(14, 9))
-        real_data = pd.Series(self.memory.data[self.target].values.flatten(),
-                              index=self.memory.data['timestamp'].values.flatten(),
-                              name=self.target[0])
-        predicted_data = self.memory.predicted_data[self.target]
+            # Plotting predicted vs real values
+            self.logger.log('Generating real vs predicted plots.')
+            fig, ax = plt.subplots(figsize=(14, 9))
 
-        # Align the indices of real and predicted data
-        common_indices = real_data.index.intersection(predicted_data.index)
-        aligned_real = real_data.loc[common_indices]
-        aligned_predicted = predicted_data.loc[common_indices]
+            real_data = pd.Series(self.memory.data[self.target].values.flatten(),
+                                  index=self.memory.data['timestamp'].values.flatten(),
+                                  name=self.target[0])
+            predicted_data = self.memory.predicted_data[self.target]
 
-        ax.plot(aligned_real.index, aligned_real.values, label='Real', color='blue')
-        ax.plot(aligned_predicted.index, aligned_predicted.values, label='Predicted', color='red',
-                linestyle='dashed')
+            # Align the indices of real and predicted data
+            common_indices = real_data.index.intersection(predicted_data.index)
+            aligned_real = real_data.loc[common_indices]
+            aligned_predicted = predicted_data.loc[common_indices]
 
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Values')
-        ax.legend()
-        plt.title('Real vs Predicted Values')
-        plt.savefig(os.path.join(dir_path, 'predicted_vs_real.png'))
-        plt.close()
+            ax.plot(aligned_real.index, aligned_real.values, label='Real', color='blue')
+            ax.plot(aligned_predicted.index, aligned_predicted.values, label='Predicted', color='red', linestyle='dashed')
 
-        trigger_data = self.trigger.give_results()
-        plt.figure()
-        plt.plot(trigger_data)
-        plt.title('Trigger Data')
-        plt.savefig(os.path.join(dir_path, 'trigger_data.png'))
-        plt.close()
+            ax.set_xlabel('Time')
+            ax.set_ylabel('Values')
+            ax.legend()
+            plt.title('Real vs Predicted Values')
+            plt.savefig(os.path.join(dir_path, 'predicted_vs_real.png'))
+            plt.close()
+            self.logger.log('Real vs predicted plots saved.')
 
-        # Calculate and save metrics
-        # metrics = {
-        #     'MSE': mean_squared_error(aligned_real.values, aligned_predicted.values),
-        #     'MAE': mean_absolute_error(aligned_real.values, aligned_predicted.values),
-        #     'R2': r2_score(aligned_real.values, aligned_predicted.values),
-        #     'MAPE': mean_absolute_percentage_error(aligned_real.values, aligned_predicted.values),
-        #     'RMSE': root_mean_squared_error(aligned_real.values, aligned_predicted.values)
-        # }
-        #
-        # with open(os.path.join(dir_path, 'metrics.txt'), 'w') as f:
-        #     for metric, value in metrics.items():
-        #         f.write(f"{metric}: {value}\n")
+            # Generating trigger data plots
+            self.logger.log('Generating trigger data plots.')
+            trigger_data = self.trigger.give_results()
+            plt.figure()
+            plt.plot(trigger_data)
+            plt.title('Trigger Data')
+            plt.savefig(os.path.join(dir_path, 'trigger_data.png'))
+            plt.close()
+            self.logger.log('Trigger data plots saved.')
+
+            # Calculate and save metrics
+            self.logger.log('Calculating metrics.')
+            metrics = {
+                'MSE': mean_squared_error(aligned_real.values, aligned_predicted.values),
+                'MAE': mean_absolute_error(aligned_real.values, aligned_predicted.values),
+                'R2': r2_score(aligned_real.values, aligned_predicted.values),
+                'MAPE': mean_absolute_percentage_error(aligned_real.values, aligned_predicted.values)
+            }
+
+            # Save metrics as a table in txt file
+            metrics_table_path = os.path.join(dir_path, 'metrics_table.txt')
+            with open(metrics_table_path, 'w') as f:
+                f.write("Metric\tValue\n")
+                f.write("-----------------------------------\n")
+                for metric, value in metrics.items():
+                    f.write(f"{metric}\t{value:.6f}\n")
+            self.logger.log(f'Metrics table saved to {metrics_table_path}.')
+
+            # Create an image of the metrics table
+            self.logger.log('Generating metrics table image.')
+
+            # Prepare data for the table
+            data = {
+                "Metric": list(metrics.keys()),
+                "Value": [f"{v:.6f}" for v in metrics.values()]
+            }
+            df = pd.DataFrame(data)
+
+            # Create the table image
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.axis('tight')
+            ax.axis('off')
+            table = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center')
+            table.auto_set_font_size(False)
+            table.set_fontsize(10)
+            table.auto_set_column_width(col=list(range(len(df.columns))))
+
+            metrics_image_path = os.path.join(dir_path, 'metrics_table.png')
+            plt.savefig(metrics_image_path, bbox_inches='tight', dpi=300)
+            plt.close()
+            self.logger.log(f'Metrics table image saved to {metrics_image_path}.')
+
+
+        except Exception as e:
+            self.logger.log(f"Error during summing up: {e}")
+            raise
+
         # TODO: inconsistent numbers of samples
 
 
