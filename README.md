@@ -39,23 +39,54 @@ Repo for testing models with time series
 │
 ├── setup.cfg          <- Configuration file for flake8
 │
-└── src                <- Source code for use in this project.
+└── src
+    ├── __init__.py              <- Makes src a Python module.
     │
-    ├── __init__.py    <- Makes src a Python module
+    ├── coaches                  <- Code related to coaching modules.
+    │   ├── __init__.py
+    │   └── base.py
     │
-    ├── data           <- Scripts to download or generate data
-    │   └── make_dataset.py
+    ├── data                     <- Scripts for data handling and processing.
+    │   ├── __init__.py
+    │   ├── data_processors.py   <- Includes DataProcessors logic.
+    │   ├── data_streamers.py    <- Includes DataStreamers logic.
+    │   └── make_dataset.py      <- Script to prepare datasets.
     │
-    ├── features       <- Scripts to turn raw data into features for modeling
-    │   └── build_features.py
+    ├── loggers                  <- Code related to logging utilities.
+    │   ├── __init__.py
+    │   └── base.py
     │
-    ├── models         <- Scripts to train models and then use trained models to make
-    │   │                 predictions
-    │   ├── predict_model.py
-    │   └── train_model.py
+    ├── memory                   <- Code managing in-memory operations.
+    │   ├── __init__.py
+    │   └── base.py
     │
-    └── visualization  <- Scripts to create exploratory and results oriented visualizations
-        └── visualize.py
+    ├── models                   <- Scripts for model building and prediction.
+    │   ├── __init__.py
+    │   ├── base.py
+    │   ├── predict_model.py     <- Logic for making predictions.
+    │   └── train_model.py       <- Logic for training models.
+    │
+    ├── pipelines                <- Code related to creating pipelines.
+    │   ├── __init__.py
+    │   └── base.py
+    │
+    ├── scripts                  <- Standalone scripts for running workflows.
+    │   ├── __init__.py
+    │   └── run_pipeline.py
+    │
+    ├── triggers                 <- Logic for event triggers.
+    │   ├── __init__.py
+    │   └── base.py
+    │
+    ├── utils                    <- Utilities and helper scripts.
+    │   ├── __init__.py
+    │   ├── plotting.py          <- Visualization and plotting utilities.
+    │   └── helpers.py           <- General utility functions.
+    │
+    └── visualization            <- Scripts for visualizing data and results.
+        ├── __init__.py
+        └── visualize.py         <- Main visualization script.
+
 ```
 
 --------

@@ -7,6 +7,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 class BaseTrigger(ABC):
     def __init__(self, logger):
         self.logger = logger
+        if self.logger:
+            self.logger.log("BaseTrigger initialized.", level="info")
 
     @abstractmethod
     def check(self, true_data, predicted_data):
@@ -37,31 +39,36 @@ class PerformanceTrigger(BaseTrigger):
         :param metric: Metric to be used for calculating the performance.
         :param threshold: Performance threshold below which retraining is triggered.
         """
-        super(BaseTrigger, self).__init__()
-        self.logger = logger
+        super().__init__(logger)
         self.metric = metric
         self.threshold = threshold
         self.performance_history = []
+        if self.logger:
+            self.logger.log(f"PerformanceTrigger initialized with threshold: {self.threshold}.", level="info")
 
     def check(self, true_data, predicted_data):
         """
         Checks if the model's performance on the data is below the threshold.
 
-        :param model: The model to be checked.
         :param true_data: The true data used to evaluate the condition.
         :param predicted_data: The predicted data used to evaluate the condition.
         :return: Boolean indicating whether retraining is needed.
         """
-        performance = self.metric(true_data, predicted_data)
-        self.logger.log(f"Performance: {performance}.")
-        self.performance_history.append(performance)
-        if len(self.performance_history) > 1:
-            change = self.performance_history[-2] - self.performance_history[-1]
-            self.logger.log(f"Change performance: {change}. Threshold: {self.threshold}.")
-            if change > self.threshold:
-                self.logger.log("Retraining needed.")
-                return True
-        return False
+        try:
+            performance = self.metric(true_data, predicted_data)
+            self.logger.log(f"Performance: {performance}.", level="info")
+            self.performance_history.append(performance)
+
+            if len(self.performance_history) > 1:
+                change = self.performance_history[-2] - self.performance_history[-1]
+                self.logger.log(f"Change performance: {change}. Threshold: {self.threshold}.", level="info")
+                if change > self.threshold:
+                    self.logger.log("Retraining needed.", level="warning")
+                    return True
+            return False
+        except Exception as e:
+            self.logger.log(f"Error during performance check: {e}", level="error")
+            raise
 
     def give_results(self):
         """
@@ -79,24 +86,28 @@ class DriftTrigger(BaseTrigger):
         it tells you to retrain the model.
         :param drift_threshold: Threshold for detecting drift in data distribution.
         """
-        super(BaseTrigger, self).__init__()
-        self.logger = logger
+        super().__init__(logger)
         self.drift_list = []
         self.drift_threshold = drift_threshold
+        if self.logger:
+            self.logger.log(f"DriftTrigger initialized with drift threshold: {self.drift_threshold}.", level="info")
 
     def check(self, true_data, predicted_data):
         """
         Checks if there is significant drift in the data compared to the data used for training.
 
-        :param model: The model to be checked.
         :param true_data: The true data used to evaluate the condition.
         :param predicted_data: The predicted data used to evaluate the condition.
         :return: Boolean indicating whether retraining is needed.
         """
-        drift_score = self.detect_drift(true_data)
-        self.drift_list.append(drift_score)
-        self.logger.log(f"Drift data score: {drift_score}. Threshold: {self.drift_threshold}.")
-        return drift_score > self.drift_threshold
+        try:
+            drift_score = self.detect_drift(true_data)
+            self.drift_list.append(drift_score)
+            self.logger.log(f"Drift data score: {drift_score}. Threshold: {self.drift_threshold}.", level="info")
+            return drift_score > self.drift_threshold
+        except Exception as e:
+            self.logger.log(f"Error during drift check: {e}", level="error")
+            raise
 
     def detect_drift(self, data):
         """
@@ -106,7 +117,6 @@ class DriftTrigger(BaseTrigger):
         :param data: The data to check for drift.
         :return: Drift score indicating the degree of drift in the data.
         """
-        # Here we would typically use statistical tests to detect drift
         pass
 
     def give_results(self):
@@ -126,11 +136,12 @@ class MeanErrorTrigger(BaseTrigger):
         :param metric: Metric to be used for calculating the performance.
         :param error_threshold: Threshold for the prediction error that triggers retraining.
         """
-        super(BaseTrigger, self).__init__()
-        self.logger = logger
+        super().__init__(logger)
         self.metric = metric
         self.error_threshold = error_threshold
         self.errors = []
+        if self.logger:
+            self.logger.log(f"MeanErrorTrigger initialized with error threshold: {self.error_threshold}.", level="info")
 
     def check(self, true_data, predicted_data):
         """
@@ -138,14 +149,16 @@ class MeanErrorTrigger(BaseTrigger):
 
         :return: Boolean indicating whether retraining is needed.
         """
-        if len(self.errors) == 0:
-            return False
-        error = self.metric(true_data, predicted_data)
-        self.logger.log(f"Error: {error}.")
-        self.errors.append(error)
-        average_error = sum(self.errors) / len(self.errors)
-        self.logger.log(f"AVG error: {average_error}. Threshold: {self.error_threshold}.")
-        return average_error > self.error_threshold
+        try:
+            error = self.metric(true_data, predicted_data)
+            self.logger.log(f"Error: {error}.", level="info")
+            self.errors.append(error)
+            average_error = sum(self.errors) / len(self.errors)
+            self.logger.log(f"AVG error: {average_error}. Threshold: {self.error_threshold}.", level="info")
+            return average_error > self.error_threshold
+        except Exception as e:
+            self.logger.log(f"Error during mean error check: {e}", level="error")
+            raise
 
     def give_results(self):
         """
