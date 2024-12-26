@@ -46,16 +46,34 @@ class ClassicPipeline(BasePipeline):
         Runs the pipeline by getting chunks from DataStreamer, making predictions with Coach,
         and updating the model with new data until all chunks are processed.
         """
-        for chunk in self.data_streamer.get_next_chunk():
-            self.logger.log(
-                f"Processing new chunk of data. Times: {chunk['timestamp'].iloc[0]} - {chunk['timestamp'].iloc[-1]}")
+        self.logger.log("Pipeline execution started.", level="info")
 
-            # Make predictions
-            self.coach.predict(chunk['timestamp'].values)
-            self.logger.log("Take Predictions.")
+        try:
+            for chunk in self.data_streamer.get_next_chunk():
+                self.logger.log(
+                    f"Processing new chunk of data. Times: {chunk['timestamp'].iloc[0]} - {chunk['timestamp'].iloc[-1]}",
+                    level="info"
+                )
 
-            # Get true data
-            self.coach.get_new_data(chunk)
-            self.logger.log("Get true data to coach.")
-        self.logger.log("Finished. Generate graphics and calculate metrics.")
-        self.coach.summing_up(dir_path=self.results_path)
+                # Make predictions
+                try:
+                    self.coach.predict(chunk['timestamp'].values)
+                    self.logger.log("Predictions completed successfully.", level="info")
+                except Exception as e:
+                    self.logger.log(f"Error during prediction: {e}", level="error")
+                    continue
+
+                # Get true data
+                try:
+                    self.coach.get_new_data(chunk)
+                    self.logger.log("True data acquired successfully.", level="info")
+                except Exception as e:
+                    self.logger.log(f"Error during data acquisition: {e}", level="error")
+                    continue
+
+            self.logger.log("All chunks processed. Generating graphics and calculating metrics.", level="info")
+            self.coach.summing_up(dir_path=self.results_path)
+            self.logger.log("Pipeline execution completed successfully.", level="info")
+
+        except Exception as e:
+            self.logger.log(f"Critical error during pipeline execution: {e}", level="critical")

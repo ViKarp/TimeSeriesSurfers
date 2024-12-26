@@ -16,19 +16,32 @@ class BaseDataStreamer(ABC):
         self.target = target
         self.split_ratio = split_ratio
         self.chunk_size = chunk_size
+        self.logger = logger
 
-        # Load and sort data
-        self.data = pd.read_csv(self.data_path, parse_dates=['timestamp'])
-        logger.log(f"Loaded data from {self.data_path}.")
-        self.data = self.data[['timestamp', target[0]]]
-        self.data = self.data.sort_values('timestamp')
+        try:
+            # Load and sort data
+            self.data = pd.read_csv(self.data_path, parse_dates=['timestamp'])
+            self.logger.log(f"Successfully loaded data from {self.data_path}.", level="info")
+        except Exception as e:
+            self.logger.log(f"Error loading data from {self.data_path}: {e}", level="error")
+            raise
 
-        # Split data into Train and Online parts
-        split_index = int(len(self.data) * self.split_ratio)
-        self._train_data = self.data.iloc[:split_index]
-        self._online_data = self.data.iloc[split_index:]
-        # It is pd.DataFrame with two columns: timestamp, target
-        logger.log("Init train and online data.")
+        try:
+            self.data = self.data[['timestamp', target[0]]]
+            self.data = self.data.sort_values('timestamp')
+            self.logger.log("Data sorted by timestamp and target column isolated.", level="info")
+
+            # Split data into Train and Online parts
+            split_index = int(len(self.data) * self.split_ratio)
+            self._train_data = self.data.iloc[:split_index]
+            self._online_data = self.data.iloc[split_index:]
+            self.logger.log("Training and online datasets initialized.", level="info")
+        except KeyError as e:
+            self.logger.log(f"KeyError during data preparation: {e}", level="error")
+            raise
+        except Exception as e:
+            self.logger.log(f"Unexpected error during data preparation: {e}", level="error")
+            raise
 
     def get_train_data(self):
         """
@@ -44,5 +57,10 @@ class BaseDataStreamer(ABC):
 
         :return: Generator of next chunk of data as a pandas DataFrame.
         """
-        for start in range(0, (len(self._online_data)//self.chunk_size) * self.chunk_size, self.chunk_size):
-            yield self._online_data.iloc[start:start + self.chunk_size]
+        try:
+            for start in range(0, (len(self._online_data) // self.chunk_size) * self.chunk_size, self.chunk_size):
+                yield self._online_data.iloc[start:start + self.chunk_size]
+                self.logger.log(f"Generated chunk: rows {start} to {start + self.chunk_size}.", level="debug")
+        except Exception as e:
+            self.logger.log(f"Error generating next data chunk: {e}", level="error")
+            raise
