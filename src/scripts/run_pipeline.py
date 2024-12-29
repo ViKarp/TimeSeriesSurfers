@@ -15,7 +15,7 @@ from src.Triggers.base import PerformanceTrigger
 from sklearn.linear_model import LinearRegression
 
 if __name__ == "__main__":
-    data_path = '../../data/raw/BTCUSDT_small.csv'
+    data_path = '../../data/raw/BTCUSDT_very_small.csv'
     target = ['close']
     logging_file_path = '../../reports/logs/log.txt'
     results_path = '../../reports/results/001/'

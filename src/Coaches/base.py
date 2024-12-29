@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+import os
+import pandas as pd
+import plotly.graph_objects as go
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, mean_absolute_percentage_error, \
     root_mean_squared_error
 
@@ -113,52 +116,101 @@ class BaseCoach(ABC):
         train_data = self.memory.data
         self.train(train_data)
 
-    def summing_up(self, dir_path):
+    def summing_up(self, dir_path: str) -> None:
         """
-        Function to generate graphics, calculate statistics and metrics.
-        :param dir_path: Directory path to save the output files.
+        Функция для построения интерактивных графиков (Real vs Predicted и Trigger Data),
+        а также для сохранения результатов в указанный каталог.
+
+        :param dir_path: Путь к каталогу для сохранения файлов.
         :return: None
         """
         try:
-            # Ensure the directory exists
+            self.logger.log(f'Creating directory {dir_path} for summary results.', level="info")
             os.makedirs(dir_path, exist_ok=True)
 
-            # Plotting predicted vs real values
-            self.logger.log('Generating real vs predicted plots.')
-            fig, ax = plt.subplots(figsize=(14, 9))
-
-            real_data = pd.Series(self.memory.data[self.target].values.flatten(),
-                                  index=self.memory.data['timestamp'].values.flatten(),
-                                  name=self.target[0])
+            # Подготовка данных для графика Real vs Predicted
+            self.logger.log('Generating real vs predicted interactive plots using Plotly.', level="info")
+            real_data = pd.Series(
+                self.memory.data[self.target].values.flatten(),
+                index=self.memory.data['timestamp'].values.flatten(),
+                name=self.target[0]
+            )
             predicted_data = self.memory.predicted_data[self.target]
 
-            # Align the indices of real and predicted data
+            # Синхронизация индексов реальных и предсказанных данных
             common_indices = real_data.index.intersection(predicted_data.index)
             aligned_real = real_data.loc[common_indices]
             aligned_predicted = predicted_data.loc[common_indices]
 
-            ax.plot(aligned_real.index, aligned_real.values, label='Real', color='blue')
-            ax.plot(aligned_predicted.index, aligned_predicted.values, label='Predicted', color='red', linestyle='dashed')
+            # Создание интерактивного графика с помощью Plotly
+            fig = go.Figure()
 
-            ax.set_xlabel('Time')
-            ax.set_ylabel('Values')
-            ax.legend()
-            plt.title('Real vs Predicted Values')
-            plt.savefig(os.path.join(dir_path, 'predicted_vs_real.png'))
-            plt.close()
-            self.logger.log('Real vs predicted plots saved.')
+            aligned_predicted = aligned_predicted.squeeze()
+            # Линия реальных данных
+            fig.add_trace(
+                go.Scatter(
+                    x=aligned_real.index,
+                    y=aligned_real.values,
+                    mode='lines+markers',
+                    name='Real',
+                    line=dict(color='blue')
+                )
+            )
 
-            # Generating trigger data plots
-            self.logger.log('Generating trigger data plots.')
+            # Линия предсказанных данных
+            fig.add_trace(
+                go.Scatter(
+                    x=aligned_predicted.index,
+                    y=aligned_predicted.values,
+                    mode='lines+markers',
+                    name='Predicted',
+                    line=dict(color='red', dash='dash')
+                )
+            )
+
+            # Настройка оформления
+            fig.update_layout(
+                title='Real vs Predicted Values',
+                xaxis_title='Time',
+                yaxis_title='Values'
+            )
+
+            # Сохраняем интерактивный график в HTML
+            real_vs_predicted_file = os.path.join(dir_path, 'predicted_vs_real.html')
+            fig.write_html(real_vs_predicted_file, auto_open=False)
+            self.logger.log(f'Real vs predicted plot saved to {real_vs_predicted_file}', level="info")
+
+            # Построение интерактивного графика для Trigger Data
+            self.logger.log('Generating trigger data interactive plots using Plotly.', level="info")
             trigger_data = self.trigger.give_results()
-            plt.figure()
-            plt.plot(trigger_data)
-            plt.title('Trigger Data')
-            plt.savefig(os.path.join(dir_path, 'trigger_data.png'))
-            plt.close()
-            self.logger.log('Trigger data plots saved.')
+            if isinstance(trigger_data, pd.Series):
+                # Если trigger_data - это Series
+                x_values = trigger_data.index
+                y_values = trigger_data.values
+            else:
+                # Иначе предполагаем, что trigger_data это массив (numpy.ndarray)
+                # или просто список. Тогда генерируем индекс как список:
+                x_values = list(range(len(trigger_data)))
+                y_values = trigger_data
 
-            # Calculate and save metrics
+            fig_trigger = go.Figure()
+            fig_trigger.add_trace(
+                go.Scatter(
+                    x=x_values,
+                    y=y_values,
+                    mode='lines',
+                    name='Trigger Data',
+                    line=dict(color='green')
+                )
+            )
+
+            fig_trigger.update_layout(title='Trigger Data')
+
+            trigger_file = os.path.join(dir_path, 'trigger_data.html')
+            fig_trigger.write_html(trigger_file, auto_open=False)
+            self.logger.log(f'Trigger data plot saved to {trigger_file}', level="info")
+
+            # Save metrics as a table in txt file
             self.logger.log('Calculating metrics.')
             metrics = {
                 'MSE': mean_squared_error(aligned_real.values, aligned_predicted.values),
@@ -167,7 +219,6 @@ class BaseCoach(ABC):
                 'MAPE': mean_absolute_percentage_error(aligned_real.values, aligned_predicted.values)
             }
 
-            # Save metrics as a table in txt file
             metrics_table_path = os.path.join(dir_path, 'metrics_table.txt')
             with open(metrics_table_path, 'w') as f:
                 f.write("Metric\tValue\n")
@@ -202,12 +253,11 @@ class BaseCoach(ABC):
 
 
         except Exception as e:
-            self.logger.log(f"Error during summing up: {e}")
+            error_message = f"An error occurred while generating interactive plots: {str(e)}"
+            self.logger.log(error_message, level="error")
             raise
 
         # TODO: inconsistent numbers of samples
-
-
 class Last10ValuesCoaches(BaseCoach):
 
     def refit_model(self):
